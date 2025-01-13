@@ -6,7 +6,7 @@ import openai
 # Ensure the images directory exists
 os.makedirs("images", exist_ok=True)
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 
 def get_first_sentence(text):
