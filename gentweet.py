@@ -6,8 +6,55 @@ import openai
 # Ensure the images directory exists
 os.makedirs("images", exist_ok=True)
 
-openai.api_key = "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"
+openai.api_key = "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"
 
+
+import json
+
+def get_next_topic(file_name="topics.json"):
+    """Retrieve the next unused topic from the topics database."""
+    try:
+        print("trying")
+        with open(file_name, "r") as f:
+            print("we have opened file")
+            content = f.read().strip()
+            print("we have read") 
+            if content:  # Check if the file is not empty
+                topics = json.loads(content)  # This will fail if the content is invalid
+                print("there is content")
+            else:
+                topics = []  # Initialize as an empty list if the file is empty
+        print(f"Loaded topics: {topics}")
+
+    except FileNotFoundError:
+        print("No topics database found.")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None
+
+    for index, topic in enumerate(topics):
+        print(f"Checking topic: {topic}")
+        if not topic["used"]:
+            print(f"Found unused topic: {topic['name']}")
+            return topic["name"], index  # Return the topic name and its index
+
+    print("No unused topics available.")
+    return None, None
+
+
+def mark_topic_as_used(index, file_name="topics.json"):
+    """Mark a topic as used in the topics database."""
+    try:
+        with open(file_name, "r") as f:
+            topics = json.load(f)
+
+        topics[index]["used"] = True
+
+        with open(file_name, "w") as f:
+            json.dump(topics, f, indent=4)
+    except Exception as e:
+        print(f"Error marking topic as used: {e}")
 
 def get_first_sentence(text):
     """Extract the first sentence from the given text."""
@@ -25,7 +72,7 @@ def save_image(url, path):
         print(f"Error downloading image: {e}")
 
 
-def generate_thread_with_images(prompt, num_tweets=5):
+def generate_thread_with_images(prompt, topic, num_tweets=5):
     """Generate a thread of tweets with images based on a prompt."""
     thread = []
     for i in range(num_tweets):
@@ -52,7 +99,7 @@ def generate_thread_with_images(prompt, num_tweets=5):
 
         # Download the image
         image_url = image_response.data[0].url
-        image_path = f"images/tweet_{i+1}.png"
+        image_path = f"images/{topic}_{i+1}.png"
         save_image(image_url, image_path)
 
         # Add tweet and image info to the thread
@@ -64,20 +111,43 @@ def save_to_database(thread, file_name="tweets.json"):
     """Save generated tweets with images to a JSON file."""
     try:
         with open(file_name, "r") as f:
-            data = json.load(f)
+            # Read the content and ensure it's not empty
+            content = f.read().strip()
+            if content:  # Check if the file is not empty
+                try:
+                    data = json.loads(content)  # Try to load the JSON data
+                except json.JSONDecodeError:
+                    print(f"Error decoding JSON from {file_name}. Initializing with empty list.")
+                    data = []  # Initialize as an empty list if decoding fails
+            else:
+                data = []  # Initialize as an empty list if the file is empty
     except FileNotFoundError:
-        data = []
+        print(f"{file_name} not found. Initializing with empty list.")
+        data = []  # Initialize as an empty list if the file doesn't exist
 
+    # Add the new thread to the data
     data.extend(thread)
 
+    # Save the data back to the file
     with open(file_name, "w") as f:
         json.dump(data, f, indent=4)
 
-
 if __name__ == "__main__":
     # Generate tweets with images and save to database
-    print("Generating tweets...")
-    prompt = "Write a Twitter article about a key Christian figure like St. Paul."
-    thread = generate_thread_with_images(prompt)
-    save_to_database(thread)
-    print("Tweets saved to database.")
+    print("hello")
+    topic, index = get_next_topic()
+    print("world")
+    if topic:
+        
+        print(f"Generating tweets for topic: {topic}")
+        
+        prompt = f"Write a Twitter article about a key Christian figure like {topic}."
+        thread = generate_thread_with_images(prompt, topic)
+        save_to_database(thread)
+        mark_topic_as_used(index)
+        print(f"Marked topic '{topic}' as used.")
+
+        print("Tweets saved to database.")
+    else: 
+        print("No topics to generate tweets for.")
+
