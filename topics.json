@@ -1,0 +1,22 @@
+[
+    {
+        "name": "St. Peter",
+        "used": true
+    },
+    {
+        "name": "St. Paul",
+        "used": true
+    },
+    {
+        "name": "St. John the Baptist",
+        "used": true
+    },
+    {
+        "name": "St. Mary Magdalene",
+        "used": false
+    },
+    {
+        "name": "St. Thomas",
+        "used": false
+    }
+]
